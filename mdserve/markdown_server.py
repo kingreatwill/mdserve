@@ -1,10 +1,13 @@
 import mimetypes
 import os
+import posixpath
 import shutil
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import markdown
 import pymdownx.superfences
 import pymdownx.arithmatex as arithmatex
+
+__version__ = '1.0.0'
 
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -13,9 +16,10 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     encoding = 'utf8'
     stylesheet = 'markdown.css'
     favicon = 'favicon.ico'
+    server_version = "MarkdownHTTP/" + __version__
 
     def do_GET(self):
-        path = self.path[1:]
+        path = self.path[1:].split('?')[0].split('#')[0]
 
         if path == 'markdown.css':
             return self.stylesheet_response()
@@ -23,14 +27,19 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             return self.favicon_response()
 
         if not os.path.isdir(self.server.directory):
-            return self.markdown_file(self.server.directory)
+            return self.resp_file(self.server.directory)
 
         full_path = os.path.join(self.server.directory, path)
 
         if not os.path.exists(full_path):
             self.send_error(404, "File not found")
-
+        # directory.
         if os.path.isdir(full_path):
+            for index in "index.html", "index.htm", "readme.md", "README.md":
+                index = os.path.join(full_path, index)
+                if os.path.exists(index):
+                    return self.resp_file(index)
+            # listed directory.
             content = []
             for entry in os.listdir(full_path):
                 content.append(
@@ -40,9 +49,14 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                     )
                 )
             return self.make_html(content)
+        # file.
+        return self.resp_file(full_path)
 
-        # Finally, try parsing the file as markdown
-        return self.markdown_file(full_path)
+    def resp_file(self, full_path: str):
+        if full_path.lower().endswith('.md'):
+            self.markdown_file(full_path)
+        else:
+            self.serve_file(full_path, self.guess_type(full_path))
 
     def make_html(self, content, last_modified=None):
         full_page = [
@@ -59,8 +73,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", self.content_type)
 
         if last_modified is not None:
-            self.send_header("Last-Modified",
-                             self.date_time_string(last_modified))
+            self.send_header("Last-Modified", self.date_time_string(last_modified))
 
         self.send_header("Content-Length", len(text))
         self.end_headers()
@@ -129,10 +142,10 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         ]
 
     def stylesheet_response(self):
-        return self.serve_file(self.stylesheet, mimetypes.types_map['.css'])
+        return self.serve_file(self.stylesheet, self.extensions_map['.css'])
 
     def favicon_response(self):
-        return self.serve_file(self.favicon, mimetypes.types_map['.ico'])
+        return self.serve_file(self.favicon, self.extensions_map['.ico'])
 
     def serve_file(self, filename, content_type):
         """
@@ -146,11 +159,30 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", content_type)
             fs = os.fstat(f.fileno())
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified",
-                             self.date_time_string(fs.st_mtime))
+            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
 
             shutil.copyfileobj(f, self.wfile)
+
+    def guess_type(self, path):
+        base, ext = posixpath.splitext(path)
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        else:
+            return self.extensions_map['']
+
+    if not mimetypes.inited:
+        mimetypes.init()  # try to read system mime.types
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream',  # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+    })
 
 
 class MarkdownHTTPServer(HTTPServer):
