@@ -33,3 +33,9 @@ setup(
         ]
     },
 )
+"""
+python setup.py check
+python setup.py sdist bdist_wheel
+# python setup.py install
+twine upload dist/mdserve-0.0.1*
+"""
