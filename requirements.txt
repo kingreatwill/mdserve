@@ -1,0 +1,2 @@
+markdown>=3.3.3
+pymdown-extensions>=8.0.1
