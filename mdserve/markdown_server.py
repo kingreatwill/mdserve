@@ -20,7 +20,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path[1:].split('?')[0].split('#')[0]
-
+        print(path)
         if path == 'markdown.css':
             return self.stylesheet_response()
         elif path == 'favicon.ico':
@@ -36,15 +36,16 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         # directory.
         if os.path.isdir(full_path):
             for index in "index.html", "index.htm", "readme.md", "README.md":
-                index = os.path.join(full_path, index)
-                if os.path.exists(index):
-                    return self.resp_file(index)
+                index_file = os.path.join(full_path, index)
+                if os.path.exists(index_file):
+                    self.redirect('/{}/{}'.format(path.strip('/'), index))
+                    # return self.resp_file(index)
             # listed directory.
             content = []
             for entry in os.listdir(full_path):
                 content.append(
                     '<div><a href="{}">{}</a>'.format(
-                        os.path.join(path, entry),
+                        os.path.join("/" + path, entry),
                         entry
                     )
                 )
@@ -146,6 +147,20 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def favicon_response(self):
         return self.serve_file(self.favicon, self.extensions_map['.ico'])
+
+    def redirect(self, location, code=302):
+        text = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+        <title>Redirecting...</title>
+        <h1>Redirecting...</h1>
+        <p>You should be redirected automatically to target URL: 
+        <a href="{}">{}</a>.  If not click the link.
+        '''.format(location, location)
+        self.send_response(code)
+        self.send_header("Content-type", self.content_type)
+        self.send_header("Content-Length", len(text))
+        self.send_header("Location", location)
+        self.end_headers()
+        self.wfile.write(text.encode(self.encoding))
 
     def serve_file(self, filename, content_type):
         """
