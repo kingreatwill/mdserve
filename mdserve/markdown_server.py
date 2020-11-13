@@ -7,7 +7,7 @@ import markdown
 import pymdownx.superfences
 import pymdownx.arithmatex as arithmatex
 
-__version__ = '1.0.0'
+__version__ = '1.2.0'
 
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -215,6 +215,30 @@ class MarkdownHTTPServer(HTTPServer):
             # HTTPServer is an old-school class object, so use the old
             # inheritance way here.
             HTTPServer.__init__(self, server_address, self.handler_class)
+
+
+def directory_html(directory: str):
+    html = '''
+    <!--fa fa-folder-open    file:fa-file  fa-markdown  <i class="fa fa fa-bars" aria-hidden="true"></i> https://fontawesome.com/icons?d=gallery&q=markdown-->
+    <div id="directory">
+        <div id="path">
+            <i class="fa fa-home fa-fw" aria-hidden="true"></i>
+            <a href="/">Home</a>&nbsp;&nbsp;»&nbsp;&nbsp;<a href="/Misc">Misc</a> 
+        </div>
+        <div id="menu">
+            <ul>		
+                <li class="folder">
+                    <i class="fa fa-folder" aria-hidden="true"></i>
+                    <a href="/Misc">Misc</a>
+                </li>		 
+                <li class="page">
+                    <i class="fa fa-file" aria-hidden="true"></i>
+                    <a href="/Structure">Structure</a>
+                </li>
+            </ul>
+        </div>
+	</div>
+    '''
 
 
 def run(host='', port=8080, directory=os.getcwd()):
