@@ -35,11 +35,11 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, "File not found")
         # directory.
         if os.path.isdir(full_path):
-            for index in "index.html", "index.htm", "readme.md", "README.md":
+            for index in self.server.indexs:
                 index_file = os.path.join(full_path, index)
                 if os.path.exists(index_file):
-                    self.redirect('/{}/{}'.format(path.strip('/'), index))
-                    # return self.resp_file(index)
+                    # self.redirect('/{}/{}'.format(path.strip('/'), index))
+                    return self.resp_file(index_file)
             # listed directory.
             content = []
             for entry in os.listdir(full_path):
@@ -74,7 +74,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", self.content_type)
 
         if last_modified is not None:
-            self.send_header("Last-Modified", self.date_time_string(last_modified))
+            self.send_header(
+                "Last-Modified", self.date_time_string(last_modified))
 
         self.send_header("Content-Length", len(text))
         self.end_headers()
@@ -122,14 +123,15 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                            'custom_checkbox': True,
                                            'clickable_checkbox': False
                                        }
-                                   },
-                                   )],
+                },
+                )],
                 last_modified=fs.st_mtime
             )
 
     def header_content(self):
         return [
-            '<link href="{}" rel="stylesheet"></link>'.format('/' + self.stylesheet),
+            '<link href="{}" rel="stylesheet"></link>'.format(
+                '/' + self.stylesheet),
             '<script src="https://unpkg.com/mermaid@8.6.4/dist/mermaid.min.js"></script>',
             '<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>',
             '''
@@ -174,7 +176,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", content_type)
             fs = os.fstat(f.fileno())
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.send_header(
+                "Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
 
             shutil.copyfileobj(f, self.wfile)
@@ -203,9 +206,9 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 class MarkdownHTTPServer(HTTPServer):
     handler_class = MarkdownHTTPRequestHandler
 
-    def __init__(self, server_address, directory):
+    def __init__(self, server_address, directory: str, indexs: str):
         self.directory = directory
-
+        self.indexs = indexs.split(',')
         try:
             super().__init__(
                 server_address, self.handler_class
@@ -241,8 +244,13 @@ def directory_html(directory: str):
     '''
 
 
-def run(host='', port=8080, directory=os.getcwd()):
-    server_address = ('', port)
-    httpd = MarkdownHTTPServer(server_address, directory)
+def run(host='', port=8080, directory=os.getcwd(), indexs='index.html,index.md,readme.md'):
+    if not directory:
+        directory = os.getcwd()
+    if not indexs:
+        indexs = 'index.html,index.md,readme.md'
+
+    server_address = (host, port)
+    httpd = MarkdownHTTPServer(server_address, directory, indexs)
     print("Serving from http://{}:{}/".format(host, port))
     httpd.serve_forever()
