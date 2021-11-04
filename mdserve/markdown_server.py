@@ -60,6 +60,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         pages = []
         folders = []        
         for entry in os.listdir(parent_directory):
+            if entry.startswith(".") or entry.startswith("_"):
+                continue
             a_tag = '<a href="/{}">{}</a>'.format(entry, entry)
             if path:
                 a_tag = '<a href="/{}/{}">{}</a>'.format(path, entry, entry)
