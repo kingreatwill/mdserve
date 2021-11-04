@@ -276,7 +276,7 @@ def run(host='', port=8080, directory=os.getcwd(), indexs=''):
     if not directory:
         directory = os.getcwd()
     if not indexs:
-        indexs = 'index.html,index.md,readme.md'
+        indexs = 'index.html,index.md,README.md'
 
     server_address = (host, port)
     httpd = MarkdownHTTPServer(server_address, directory, indexs)

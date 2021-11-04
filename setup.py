@@ -7,7 +7,7 @@ def read(fname):
 
 
 NAME = "mdserve"
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 requirements = [
     n.strip() for n in read('requirements.txt').split('\n') if n.strip()
 ]
