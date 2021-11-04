@@ -7,7 +7,7 @@ def read(fname):
 
 
 NAME = "mdserve"
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 requirements = [
     n.strip() for n in read('requirements.txt').split('\n') if n.strip()
 ]
@@ -37,5 +37,5 @@ setup(
 python setup.py check
 python setup.py sdist bdist_wheel
 # python setup.py install
-twine upload dist/mdserve-1.2.0*
+twine upload dist/mdserve-1.3.0*
 """

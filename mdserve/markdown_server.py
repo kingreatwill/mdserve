@@ -8,7 +8,7 @@ import markdown
 import pymdownx.superfences
 import pymdownx.arithmatex as arithmatex
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -70,10 +70,19 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 folders.append('<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
         
-        content = ['<ul>']
+        content = []
+        content.extend(['<div class="path">', 
+        '<i class="fa fa-home fa-fw" aria-hidden="true"></i><a href="/">Home</a>'])
+        paths = path.split('/')
+        if len(paths)>1:          
+            content.append('<a href="/{}"><i class="fa fa-ellipsis-h fa-fw" aria-hidden="true"></i>/</a>'.format('/'.join(paths[0:-1])))
+        
+        content.append('</div>')
+
+        content.append('<div><ul>')
         content.extend(folders)
         content.extend(pages)
-        content.append('</ul>')
+        content.append('</ul></div>')
         return content
 
     def make_html(self, content, full_path=None,last_modified=None):
