@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install git -y
 
 # COPY ./startup.sh /usr/bin/startup.sh
 # RUN chmod +x /usr/bin/startup.sh
-RUN pip install mdserve
+RUN pip install --upgrade mdserve -i https://pypi.org/simple/
 # ENV GIT_URL=https://github.com/openjw/open.git
 # RUN git clone ${GIT_URL}
 RUN mkdir -p /usr/share/mdserve
