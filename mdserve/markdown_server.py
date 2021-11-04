@@ -2,6 +2,7 @@ import mimetypes
 import os
 import posixpath
 import shutil
+import urllib
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import markdown
 import pymdownx.superfences
@@ -20,11 +21,10 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path[1:].split('?')[0].split('#')[0]
+        path = urllib.parse.unquote(path)
         print(path)
-        if path == 'markdown.css':
-            return self.stylesheet_response()
-        elif path == 'favicon.ico':
-            return self.favicon_response()
+        if path in ['markdown.css','favicon.ico','css/style.css']:
+            return self.serve_file(path, True)
 
         if not os.path.isdir(self.server.directory):
             return self.resp_file(self.server.directory)
@@ -33,40 +33,56 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
         if not os.path.exists(full_path):
             self.send_error(404, "File not found")
-        # directory.
-        if os.path.isdir(full_path):
-            for index in self.server.indexs:
-                index_file = os.path.join(full_path, index)
-                if os.path.exists(index_file):
-                    # self.redirect('/{}/{}'.format(path.strip('/'), index))
-                    return self.resp_file(index_file)
-            # listed directory.
-            content = []
-            for entry in os.listdir(full_path):
-                content.append(
-                    '<div><a href="{}">{}</a>'.format(
-                        os.path.join("/" + path, entry),
-                        entry
-                    )
-                )
-            return self.make_html(content)
         # file.
         return self.resp_file(full_path)
 
     def resp_file(self, full_path: str):
+        # directory.
+        if os.path.isdir(full_path):
+            # index;
+            for index in self.server.indexs:
+                index_file = os.path.join(full_path, index)
+                if os.path.exists(index_file):
+                    return self.resp_file(index_file)
+            return self.make_html([],full_path = full_path)
+        # md file.
         if full_path.lower().endswith('.md'):
             self.markdown_file(full_path)
         else:
-            self.serve_file(full_path, self.guess_type(full_path))
+            self.serve_file(full_path)
 
-    def make_html(self, content, last_modified=None):
+    def make_sidebar(self, full_path: str):
+        parent_directory = full_path
+        if os.path.isfile(full_path):
+            parent_directory = os.path.dirname(full_path)
+        
+        parent_directory = parent_directory.replace("\\","/")
+        path = parent_directory.lower().replace(self.server.directory.lower(),"").strip("/")
+
+        content = ['<ul>']
+        for entry in os.listdir(parent_directory):
+            content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
+            # entry_full = os.path.join(parent_directory, entry)
+            # if os.path.isfile(entry_full):
+            #     content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
+            # else:
+            #     content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
+            # content.append('<div><a href="{}">{}</a>'.format(os.path.join("/" + path, entry), entry))
+        content.append('</ul>')
+        return content
+
+    def make_html(self, content, full_path=None,last_modified=None):
         full_page = [
             "<!doctype html>",
             "<html><head>",
         ]
         full_page.extend(self.header_content())
-        full_page.extend(["</head>", "<body>"])
+        full_page.extend(["</head>", '<body>'])
+        full_page.extend(['<div class="layout">', '<div class="layout-sidebar">'])
+        full_page.extend(self.make_sidebar(full_path))
+        full_page.extend(['</div>','<div class="layout-main markdown">'])
         full_page.extend(content)
+        full_page.extend(["</div>", '</div>'])
         full_page.append("</body></html>")
 
         text = "\n".join(full_page)
@@ -77,12 +93,12 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header(
                 "Last-Modified", self.date_time_string(last_modified))
 
-        self.send_header("Content-Length", len(text))
+        #self.send_header("Content-Length", len(text.encode(self.encoding)))
         self.end_headers()
         self.wfile.write(text.encode(self.encoding))
 
-    def markdown_file(self, path):
-        with open(path, 'r', encoding='UTF-8') as f:
+    def markdown_file(self, full_path):
+        with open(full_path, 'r', encoding='UTF-8') as f:
             fs = os.fstat(f.fileno())
             return self.make_html(
                 [markdown.markdown(f.read(),
@@ -125,13 +141,14 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                        }
                 },
                 )],
+                full_path=full_path,
                 last_modified=fs.st_mtime
             )
 
     def header_content(self):
         return [
-            '<link href="{}" rel="stylesheet"></link>'.format(
-                '/' + self.stylesheet),
+            '<link href="{}" rel="stylesheet"></link>'.format('/' + self.stylesheet),
+            '<link rel="stylesheet" href="/css/style.css"></link>',
             '<script src="https://unpkg.com/mermaid@8.6.4/dist/mermaid.min.js"></script>',
             '<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>',
             '''
@@ -144,11 +161,6 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             </script>''',
         ]
 
-    def stylesheet_response(self):
-        return self.serve_file(self.stylesheet, self.extensions_map['.css'])
-
-    def favicon_response(self):
-        return self.serve_file(self.favicon, self.extensions_map['.ico'])
 
     def redirect(self, location, code=302):
         text = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
@@ -164,20 +176,21 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(text.encode(self.encoding))
 
-    def serve_file(self, filename, content_type):
+    def serve_file(self, filename, local_file: bool = False):
         """
         Returns a 200 response with the content of the filename (which is
         relative to this file), and the given content type.
         """
-        rel_path = os.path.join(os.path.dirname(__file__), filename)
-
+        rel_path = filename
+        if local_file:
+            rel_path = os.path.join(os.path.dirname(__file__), filename)
+        content_type = self.guess_type(filename)
         with open(rel_path, 'rb') as f:
             self.send_response(200)
             self.send_header("Content-type", content_type)
             fs = os.fstat(f.fileno())
-            self.send_header("Content-Length", str(fs[6]))
-            self.send_header(
-                "Last-Modified", self.date_time_string(fs.st_mtime))
+            #self.send_header("Content-Length", str(fs[6]))
+            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
 
             shutil.copyfileobj(f, self.wfile)
@@ -207,7 +220,7 @@ class MarkdownHTTPServer(HTTPServer):
     handler_class = MarkdownHTTPRequestHandler
 
     def __init__(self, server_address, directory: str, indexs: str):
-        self.directory = directory
+        self.directory = directory.replace("\\","/")
         self.indexs = indexs.split(',')
         try:
             super().__init__(
