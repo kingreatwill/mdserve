@@ -13,9 +13,7 @@ __version__ = '1.2.0'
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     content_type = 'text/html;charset=utf-8'
-    stylesheet_content_type = 'text/css'
     encoding = 'utf8'
-    stylesheet = 'markdown.css'
     favicon = 'favicon.ico'
     server_version = "MarkdownHTTP/" + __version__
 
@@ -23,7 +21,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.path[1:].split('?')[0].split('#')[0]
         path = urllib.parse.unquote(path)
         print(path)
-        if path in ['markdown.css','favicon.ico','css/style.css']:
+        if path in ['css/markdown.css','favicon.ico','css/style.css']:
             return self.serve_file(path, True)
 
         if not os.path.isdir(self.server.directory):
@@ -61,13 +59,16 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
         content = ['<ul>']
         for entry in os.listdir(parent_directory):
-            content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
-            # entry_full = os.path.join(parent_directory, entry)
-            # if os.path.isfile(entry_full):
-            #     content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
-            # else:
-            #     content.append('<li><a href="/{}/{}">{}</a></li>'.format(path, entry, entry))
-            # content.append('<div><a href="{}">{}</a>'.format(os.path.join("/" + path, entry), entry))
+            a_tag = '<a href="/{}">{}</a>'.format(entry, entry)
+            if path:
+                a_tag = '<a href="/{}/{}">{}</a>'.format(path, entry, entry)
+            
+            entry_full = os.path.join(parent_directory, entry)
+            if os.path.isfile(entry_full):
+                content.append('<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
+            else:
+                content.append('<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
+
         content.append('</ul>')
         return content
 
@@ -147,8 +148,9 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def header_content(self):
         return [
-            '<link href="{}" rel="stylesheet"></link>'.format('/' + self.stylesheet),
+            '<link rel="stylesheet" href="/css/markdown.css"></link>',
             '<link rel="stylesheet" href="/css/style.css"></link>',
+            '<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>',
             '<script src="https://unpkg.com/mermaid@8.6.4/dist/mermaid.min.js"></script>',
             '<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>',
             '''
