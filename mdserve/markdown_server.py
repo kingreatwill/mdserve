@@ -57,7 +57,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         parent_directory = parent_directory.replace("\\","/")
         path = parent_directory.lower().replace(self.server.directory.lower(),"").strip("/")
 
-        content = ['<ul>']
+        pages = []
+        folders = []        
         for entry in os.listdir(parent_directory):
             a_tag = '<a href="/{}">{}</a>'.format(entry, entry)
             if path:
@@ -65,10 +66,13 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             
             entry_full = os.path.join(parent_directory, entry)
             if os.path.isfile(entry_full):
-                content.append('<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
+                pages.append('<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
             else:
-                content.append('<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
-
+                folders.append('<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
+        
+        content = ['<ul>']
+        content.extend(folders)
+        content.extend(pages)
         content.append('</ul>')
         return content
 

@@ -8,6 +8,7 @@ body{
 	line-height: 1.5;
 	word-wrap: break-word;
 }
+
 h1 {
 	color: #641818;
 	border-bottom: 1px solid #d0d0d0;
@@ -89,7 +90,16 @@ h6 {
 	border-right: 1px dotted #d4d4d4;
 }
 
-
 .layout-sidebar li.current a {
 	color: black;
+}
+
+.fa-folder{
+	color: #dcb67a;
+	padding-right: 5px;
+}
+
+.fa-file{
+	color: #c9c3b9;
+	padding-right: 5px;
 }
