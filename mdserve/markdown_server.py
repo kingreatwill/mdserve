@@ -55,7 +55,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             parent_directory = os.path.dirname(full_path)
         
         parent_directory = parent_directory.replace("\\","/")
-        path = parent_directory.lower().replace(self.server.directory.lower(),"").strip("/")
+        path = parent_directory.replace(self.server.directory,"").strip("/")
 
         pages = []
         folders = []        
@@ -272,7 +272,7 @@ def directory_html(directory: str):
     '''
 
 
-def run(host='', port=8080, directory=os.getcwd(), indexs='index.html,index.md,readme.md'):
+def run(host='', port=8080, directory=os.getcwd(), indexs=''):
     if not directory:
         directory = os.getcwd()
     if not indexs:
