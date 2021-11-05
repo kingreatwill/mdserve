@@ -85,6 +85,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                 file_extension = os.path.splitext(entry_full)[-1]
                 if not file_extension:
                     file_extension = entry
+            else:
+                a_href = a_href + '/' # 解决默认 README.md中的图片路径问题（如：[](img/xx.png)）
 
             li_icon = self.file_icon(file_extension, entry_isfile)
             li_objs.append({'isfile': entry_isfile, 'href': a_href,
@@ -255,7 +257,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         if local_file:
             rel_path = os.path.join(os.path.dirname(__file__), filename)
         if not os.path.exists(rel_path):
-            self.send_response(404)
+            self.send_error(404, "File not found") #self.send_response(404)
             return
         content_type = self.guess_type(filename)
         with open(rel_path, 'rb') as f:
