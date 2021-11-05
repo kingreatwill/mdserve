@@ -7,9 +7,17 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import markdown
 import pymdownx.superfences
 import pymdownx.arithmatex as arithmatex
-
+from operator import itemgetter, attrgetter
 __version__ = '1.4.0'
 
+def extensions_icon_map_init():
+    icon_map = {}
+    rel_path = os.path.join(os.path.dirname(__file__), 'icons')
+    for entry in os.listdir(rel_path):
+        if entry.startswith('file_type_') or entry.startswith('folder_type_'):
+            ext = '{}'.format(entry.replace('.svg',''))            
+            icon_map[ext] = entry
+    return icon_map
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     content_type = 'text/html;charset=utf-8'
@@ -58,36 +66,42 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         parent_directory = parent_directory.replace("\\", "/")
         path = parent_directory.replace(self.server.directory, "").strip("/")
 
-        pages = []
-        folders = []
+        li_objs = []
         for entry in os.listdir(parent_directory):
             if entry.startswith(".") or entry.startswith("_"):
                 continue
-            a_tag = '<a href="/{}">{}</a>'.format(entry, entry)
-            if path:
-                a_tag = '<a href="/{}/{}">{}</a>'.format(path, entry, entry)
-
             entry_full = os.path.join(parent_directory, entry)
-            if os.path.isfile(entry_full):
-                pages.append(
-                    '<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
-            else:
-                folders.append(
-                    '<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
+            entry_isfile = os.path.isfile(entry_full)
+            a_href = '/{}'.format(entry)
+            if path:
+                a_href = '/{}/{}'.format(path, entry)
+            
+            li_class = 'folder'
+            file_extension = entry
+            if entry_isfile:
+                li_class = 'page'
+                file_extension = os.path.splitext(entry_full)[-1]
+                if not file_extension: file_extension = entry
+            
+            li_icon = self.file_icon(file_extension, entry_isfile)
+            li_objs.append({'isfile': entry_isfile, 'href': a_href, 'name': entry, 'class':li_class, 'icon':li_icon})
 
+        
+        li_objs = sorted(li_objs, key= lambda kv:(kv['isfile'], kv['name']))
+        # 首页Home;
         content = []
         content.extend(['<div class="path">',
-                        '<i class="fa fa-home fa-fw" aria-hidden="true"></i><a href="/">Home</a>'])
+                        '<a href="/"><img src="/icons/default_root_folder_opened.svg"/>Home</a>'])
         paths = path.split('/')
         if len(paths) > 1:
             content.append(
-                '<a href="/{}"><i class="fa fa-ellipsis-h fa-fw" aria-hidden="true"></i>/</a>'.format('/'.join(paths[0:-1])))
+                '<a href="/{}">../</a>'.format('/'.join(paths[0:-1])))
 
         content.append('</div>')
-
+        # 目录下的文件或者目录;
         content.append('<div><ul>')
-        content.extend(folders)
-        content.extend(pages)
+        for li in li_objs:
+            content.append('<li class="{class}"><a href="{href}"><img src="/icons/{icon}"/>{name}</a></li>'.format(**li))
         content.append('</ul></div>')
         return content
 
@@ -161,10 +175,11 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                            ]
                                        },
                                        "pymdownx.superfences": {
-                                            "custom_fences": [
-                                                {"name": "math", "class": "arithmatex", 'format':arithmatex.arithmatex_fenced_format(which="generic")}
-                                            ]
-                                        },
+                                           "custom_fences": [
+                                               {"name": "math", "class": "arithmatex", 'format': arithmatex.arithmatex_fenced_format(
+                                                   which="generic")}
+                                           ]
+                                       },
                                        'pymdownx.tasklist': {
                                            'custom_checkbox': True,
                                            'clickable_checkbox': False
@@ -172,9 +187,9 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                        # https://facelessuser.github.io/pymdown-extensions/extensions/highlight/#options
                                        'pymdownx.highlight': {
                                            'css_class': 'highlight',
-                                        #    'guess_lang': True,
-                                           #'noclasses': True,
-                                           #'linenums': True,
+                                           #    'guess_lang': True,
+                                           # 'noclasses': True,
+                                           # 'linenums': True,
                                        },
                                        'pymdownx.arithmatex': {
                                            'preview': False,
@@ -248,6 +263,22 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
             shutil.copyfileobj(f, self.wfile)
 
+    def file_icon(self, ext:str, isfile:bool):
+        ext = ext.lower()
+        if not isfile:
+            ext = 'folder_type_{}'.format(ext)
+        else:
+            ext = 'file_type_{}'.format(ext.strip('.'))
+
+        if ext in self.extensions_icon_map:
+            return self.extensions_icon_map[ext]
+        li_icon = 'default_folder.svg'
+        if isfile:
+            li_icon = 'default_file.svg'
+        return li_icon
+        
+        
+
     def guess_type(self, path):
         base, ext = posixpath.splitext(path)
         if ext in self.extensions_map:
@@ -267,7 +298,46 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         '.c': 'text/plain',
         '.h': 'text/plain',
     })
+    extensions_icon_map = extensions_icon_map_init()
+    # https://github.com/vscode-icons/vscode-icons/blob/master/src/iconsManifest/supportedFolders.ts
+    # https://github.com/vscode-icons/vscode-icons/blob/master/src/iconsManifest/supportedExtensions.ts
+    extensions_icon_map.update({
+        'file_type_md': 'file_type_markdown.svg',
+        'file_type_gemfile': 'file_type_bundler.svg',
 
+        'file_type_gz': 'file_type_zip.svg',
+        'file_type_7z': 'file_type_zip.svg',
+        'file_type_tar': 'file_type_zip.svg',
+        'file_type_tgz': 'file_type_zip.svg',
+        'file_type_bz': 'file_type_zip.svg',
+
+        'file_type_mod': 'file_type_go_package.svg',
+        'file_type_sum': 'file_type_go_package.svg',
+
+        'file_type_dockerfile': 'file_type_docker2.svg',
+        'folder_type_lang': 'folder_type_locale.svg',
+        'folder_type_language': 'folder_type_locale.svg',
+        'folder_type_languages': 'folder_type_locale.svg',
+        'folder_type_locales': 'folder_type_locale.svg',
+        'folder_type_internationalization': 'folder_type_locale.svg',
+        'folder_type_i18n': 'folder_type_locale.svg',
+        'folder_type_globalization': 'folder_type_locale.svg',
+        'folder_type_g11n': 'folder_type_locale.svg',
+        'folder_type_localization': 'folder_type_locale.svg',
+        'folder_type_l10n': 'folder_type_locale.svg',
+        'folder_type_logs': 'folder_type_log.svg',
+        'folder_type_img': 'folder_type_images.svg',
+        'folder_type_image': 'folder_type_images.svg',
+        'folder_type_imgs': 'folder_type_images.svg',
+        'folder_type_source': 'folder_type_src.svg',
+        'folder_type_sources': 'folder_type_src.svg',
+
+        'folder_type_tests': 'folder_type_test.svg',
+        'folder_type_integration': 'folder_type_test.svg',
+        'folder_type_specs': 'folder_type_test.svg',
+        'folder_type_spec': 'folder_type_test.svg',
+        'folder_type_win': 'folder_type_windows.svg',
+    })
 
 class MarkdownHTTPServer(HTTPServer):
     handler_class = MarkdownHTTPRequestHandler
@@ -296,3 +366,6 @@ def run(host='', port=8080, directory=os.getcwd(), indexs=''):
     httpd = MarkdownHTTPServer(server_address, directory, indexs)
     print("Serving from http://{}:{}/".format(host, port))
     httpd.serve_forever()
+
+
+
