@@ -7,7 +7,7 @@ def read(fname):
 
 
 NAME = "mdserve"
-VERSION = "1.4.1"
+VERSION = "1.4.3"
 requirements = [
     n.strip() for n in read('requirements.txt').split('\n') if n.strip()
 ]
@@ -21,12 +21,13 @@ setup(
     url="https://github.com/openjw/mdserve",
     keywords=["markdown"],
     packages=find_packages(),
-    package_data={'': ['*.css', '*.ico', '*.svg']},
+    package_data={'': ['*.css', '*.ico', '*.svg'],'mdserve': ['css/*.css','icons/*.svg']},
     install_requires=requirements,
     include_package_data=True,
     long_description=read('README.md'),
     long_description_content_type="text/markdown",
     zip_safe=True,
+    #include_dirs =['css','icons'],
     entry_points={
         'console_scripts': [
             'mdserve = mdserve.__main__:main'
@@ -37,5 +38,5 @@ setup(
 python setup.py check
 python setup.py sdist bdist_wheel
 # python setup.py install
-twine upload dist/mdserve-1.4.1*
+twine upload dist/mdserve-1.4.3*
 """
