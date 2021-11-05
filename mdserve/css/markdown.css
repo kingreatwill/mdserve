@@ -501,6 +501,37 @@ sup {
         word-wrap: break-word;
     }
 }
+.task-list-item{
+    position: relative;
+    list-style-type: none;
+}
+.task-list-item input:checked + .task-list-indicator {
+    background: #52fa7c;
+    /* 这里是背景颜色，可以自定义设置 */
+}
+.task-list-item .task-list-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 1px;
+    border: 1px solid #d8d8d8;
+    /* 这里是对勾颜色，可以自定义，和勾选框背景色色差较大 */
+    background: white;
+}
+  
+.task-list-item .task-list-indicator:before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    width: 5px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 1px 1px 0;
+    transform: rotate(45deg);
+}
 
 
 /* https://pygments.org/docs/quickstart/
