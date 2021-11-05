@@ -8,7 +8,7 @@ import markdown
 import pymdownx.superfences
 import pymdownx.arithmatex as arithmatex
 
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -20,9 +20,10 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path[1:].split('?')[0].split('#')[0]
         path = urllib.parse.unquote(path)
-        print(path)
-        if path in ['css/markdown.css','favicon.ico','css/style.css']:
+        if path.startswith('css/') or path.startswith('icons/') or path == 'favicon.ico':
             return self.serve_file(path, True)
+        # if path in ['css/markdown.css', 'favicon.ico', 'css/style.css']:
+        #     return self.serve_file(path, True)
 
         if not os.path.isdir(self.server.directory):
             return self.resp_file(self.server.directory)
@@ -42,7 +43,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                 index_file = os.path.join(full_path, index)
                 if os.path.exists(index_file):
                     return self.resp_file(index_file)
-            return self.make_html([],full_path = full_path)
+            return self.make_html([], full_path=full_path)
         # md file.
         if full_path.lower().endswith('.md'):
             self.markdown_file(full_path)
@@ -53,32 +54,35 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         parent_directory = full_path
         if os.path.isfile(full_path):
             parent_directory = os.path.dirname(full_path)
-        
-        parent_directory = parent_directory.replace("\\","/")
-        path = parent_directory.replace(self.server.directory,"").strip("/")
+
+        parent_directory = parent_directory.replace("\\", "/")
+        path = parent_directory.replace(self.server.directory, "").strip("/")
 
         pages = []
-        folders = []        
+        folders = []
         for entry in os.listdir(parent_directory):
             if entry.startswith(".") or entry.startswith("_"):
                 continue
             a_tag = '<a href="/{}">{}</a>'.format(entry, entry)
             if path:
                 a_tag = '<a href="/{}/{}">{}</a>'.format(path, entry, entry)
-            
+
             entry_full = os.path.join(parent_directory, entry)
             if os.path.isfile(entry_full):
-                pages.append('<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
+                pages.append(
+                    '<li class="page"><i class="fa fa-file" aria-hidden="true"></i>{}</li>'.format(a_tag))
             else:
-                folders.append('<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
-        
+                folders.append(
+                    '<li class="folder"><i class="fa fa-folder" aria-hidden="true"></i>{}</li>'.format(a_tag))
+
         content = []
-        content.extend(['<div class="path">', 
-        '<i class="fa fa-home fa-fw" aria-hidden="true"></i><a href="/">Home</a>'])
+        content.extend(['<div class="path">',
+                        '<i class="fa fa-home fa-fw" aria-hidden="true"></i><a href="/">Home</a>'])
         paths = path.split('/')
-        if len(paths)>1:          
-            content.append('<a href="/{}"><i class="fa fa-ellipsis-h fa-fw" aria-hidden="true"></i>/</a>'.format('/'.join(paths[0:-1])))
-        
+        if len(paths) > 1:
+            content.append(
+                '<a href="/{}"><i class="fa fa-ellipsis-h fa-fw" aria-hidden="true"></i>/</a>'.format('/'.join(paths[0:-1])))
+
         content.append('</div>')
 
         content.append('<div><ul>')
@@ -87,16 +91,17 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         content.append('</ul></div>')
         return content
 
-    def make_html(self, content, full_path=None,last_modified=None):
+    def make_html(self, content, full_path=None, last_modified=None):
         full_page = [
             "<!doctype html>",
             "<html><head>",
         ]
         full_page.extend(self.header_content())
         full_page.extend(["</head>", '<body>'])
-        full_page.extend(['<div class="layout">', '<div class="layout-sidebar">'])
+        full_page.extend(
+            ['<div class="layout">', '<div class="layout-sidebar">'])
         full_page.extend(self.make_sidebar(full_path))
-        full_page.extend(['</div>','<div class="layout-main markdown">'])
+        full_page.extend(['</div>', '<div class="layout-main markdown">'])
         full_page.extend(content)
         full_page.extend(["</div>", '</div>'])
         full_page.append("</body></html>")
@@ -123,8 +128,12 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                                'pymdownx.superfences',
                                                'pymdownx.arithmatex',
                                                'pymdownx.inlinehilite',
+                                               'pymdownx.superfences',
                                                'pymdownx.tabbed',
                                                'pymdownx.tasklist',
+                                               'pymdownx.highlight',
+                                               'pymdownx.emoji',
+                                               'pymdownx.magiclink',
                                                'markdown.extensions.footnotes',
                                                'markdown.extensions.attr_list',
                                                'markdown.extensions.def_list',
@@ -147,13 +156,29 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                                {
                                                    'name': 'math',
                                                    'class': 'arithmatex',
-                                                   'format': arithmatex.inline_mathjax_format
+                                                   'format': arithmatex.arithmatex_inline_format(which="generic")
                                                }
                                            ]
                                        },
+                                       "pymdownx.superfences": {
+                                            "custom_fences": [
+                                                {"name": "math", "class": "arithmatex", 'format':arithmatex.arithmatex_fenced_format(which="generic")}
+                                            ]
+                                        },
                                        'pymdownx.tasklist': {
                                            'custom_checkbox': True,
                                            'clickable_checkbox': False
+                                       },
+                                       # https://facelessuser.github.io/pymdown-extensions/extensions/highlight/#options
+                                       'pymdownx.highlight': {
+                                           'css_class': 'highlight',
+                                        #    'guess_lang': True,
+                                           #'noclasses': True,
+                                           #'linenums': True,
+                                       },
+                                       'pymdownx.arithmatex': {
+                                           'preview': False,
+                                           'generic': True,
                                        }
                 },
                 )],
@@ -166,18 +191,28 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             '<link rel="stylesheet" href="/css/markdown.css"></link>',
             '<link rel="stylesheet" href="/css/style.css"></link>',
             '<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>',
-            '<script src="https://unpkg.com/mermaid@8.6.4/dist/mermaid.min.js"></script>',
-            '<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>',
-            '''
+            '<script src="https://unpkg.com/mermaid@8.13.3/dist/mermaid.min.js"></script>',
+            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css" integrity="sha384-R4558gYOUz8mP9YWpZJjofhk+zx0AS11p36HnD2ZKj/6JR5z27gSSULCNHIRReVs" crossorigin="anonymous">',
+            '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js" integrity="sha384-z1fJDqw8ZApjGO3/unPWUPsIymfsJmyrDVWC8Tv/a1HeOtGmkwNd/7xUS0Xcnvsx" crossorigin="anonymous"></script>',
+            '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/contrib/auto-render.min.js" integrity="sha384-+XBljXPPiv+OzfbB3cVmLHf4hdUFHlWNZN5spNQ7rmHTXpd7WvJum6fIACpNNfIR" crossorigin="anonymous"></script>',
+            r'''
             <script>
-            MathJax.Hub.Config({
-              config: ["MMLorHTML.js"],
-              jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
-              extensions: ["MathMenu.js", "MathZoom.js"]
-            });
-            </script>''',
+                document.addEventListener("DOMContentLoaded", function() {
+                    renderMathInElement(document.body, {
+                        strict: "ignore",
+                        trust: ["\\htmlId"],
+                        macros: {
+                            "\\eqref": "\\href{###1}{(\\text{#1})}",
+                            "\\ref": "\\href{###1}{\\text{#1}}",
+                            "\\label": "\\htmlId{#1}{}",
+                            "\\f": "#1f(#2)"
+                        },
+                        throwOnError: false,
+                    });
+                });
+            </script>
+            ''',
         ]
-
 
     def redirect(self, location, code=302):
         text = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
@@ -207,7 +242,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", content_type)
             fs = os.fstat(f.fileno())
             #self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.send_header(
+                "Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
 
             shutil.copyfileobj(f, self.wfile)
@@ -237,7 +273,7 @@ class MarkdownHTTPServer(HTTPServer):
     handler_class = MarkdownHTTPRequestHandler
 
     def __init__(self, server_address, directory: str, indexs: str):
-        self.directory = directory.replace("\\","/")
+        self.directory = directory.replace("\\", "/")
         self.indexs = indexs.split(',')
         try:
             super().__init__(
@@ -248,30 +284,6 @@ class MarkdownHTTPServer(HTTPServer):
             # HTTPServer is an old-school class object, so use the old
             # inheritance way here.
             HTTPServer.__init__(self, server_address, self.handler_class)
-
-
-def directory_html(directory: str):
-    html = '''
-    <!--fa fa-folder-open    file:fa-file  fa-markdown  <i class="fa fa fa-bars" aria-hidden="true"></i> https://fontawesome.com/icons?d=gallery&q=markdown-->
-    <div id="directory">
-        <div id="path">
-            <i class="fa fa-home fa-fw" aria-hidden="true"></i>
-            <a href="/">Home</a>&nbsp;&nbsp;»&nbsp;&nbsp;<a href="/Misc">Misc</a> 
-        </div>
-        <div id="menu">
-            <ul>		
-                <li class="folder">
-                    <i class="fa fa-folder" aria-hidden="true"></i>
-                    <a href="/Misc">Misc</a>
-                </li>		 
-                <li class="page">
-                    <i class="fa fa-file" aria-hidden="true"></i>
-                    <a href="/Structure">Structure</a>
-                </li>
-            </ul>
-        </div>
-	</div>
-    '''
 
 
 def run(host='', port=8080, directory=os.getcwd(), indexs=''):
