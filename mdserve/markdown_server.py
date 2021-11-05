@@ -10,14 +10,16 @@ import pymdownx.arithmatex as arithmatex
 from operator import itemgetter, attrgetter
 __version__ = '1.4.0'
 
+
 def extensions_icon_map_init():
     icon_map = {}
     rel_path = os.path.join(os.path.dirname(__file__), 'icons')
     for entry in os.listdir(rel_path):
         if entry.startswith('file_type_') or entry.startswith('folder_type_'):
-            ext = '{}'.format(entry.replace('.svg',''))            
+            ext = '{}'.format(entry.replace('.svg', ''))
             icon_map[ext] = entry
     return icon_map
+
 
 class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     content_type = 'text/html;charset=utf-8'
@@ -75,19 +77,20 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             a_href = '/{}'.format(entry)
             if path:
                 a_href = '/{}/{}'.format(path, entry)
-            
+
             li_class = 'folder'
             file_extension = entry
             if entry_isfile:
                 li_class = 'page'
                 file_extension = os.path.splitext(entry_full)[-1]
-                if not file_extension: file_extension = entry
-            
-            li_icon = self.file_icon(file_extension, entry_isfile)
-            li_objs.append({'isfile': entry_isfile, 'href': a_href, 'name': entry, 'class':li_class, 'icon':li_icon})
+                if not file_extension:
+                    file_extension = entry
 
-        
-        li_objs = sorted(li_objs, key= lambda kv:(kv['isfile'], kv['name']))
+            li_icon = self.file_icon(file_extension, entry_isfile)
+            li_objs.append({'isfile': entry_isfile, 'href': a_href,
+                           'name': entry, 'class': li_class, 'icon': li_icon})
+
+        li_objs = sorted(li_objs, key=lambda kv: (kv['isfile'], kv['name']))
         # 首页Home;
         content = []
         content.extend(['<div class="path">',
@@ -101,7 +104,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         # 目录下的文件或者目录;
         content.append('<div><ul>')
         for li in li_objs:
-            content.append('<li class="{class}"><a href="{href}"><img src="/icons/{icon}"/>{name}</a></li>'.format(**li))
+            content.append(
+                '<li class="{class}"><a href="{href}"><img src="/icons/{icon}"/>{name}</a></li>'.format(**li))
         content.append('</ul></div>')
         return content
 
@@ -156,15 +160,6 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                                'markdown.extensions.md_in_html',
                                                ],
                                    extension_configs={
-                                       'pymdownx.superfences': {
-                                           'custom_fences': [
-                                               {
-                                                   'name': 'mermaid',
-                                                   'class': 'mermaid',
-                                                   'format': pymdownx.superfences.fence_div_format
-                                               }
-                                           ]
-                                       },
                                        'pymdownx.inlinehilite': {
                                            'custom_inline': [
                                                {
@@ -176,8 +171,16 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                        },
                                        "pymdownx.superfences": {
                                            "custom_fences": [
-                                               {"name": "math", "class": "arithmatex", 'format': arithmatex.arithmatex_fenced_format(
-                                                   which="generic")}
+                                               {
+                                                   "name": "math",
+                                                   "class": "arithmatex",
+                                                   'format': arithmatex.arithmatex_fenced_format(which="generic")
+                                               },
+                                               {
+                                                   'name': 'mermaid',
+                                                   'class': 'mermaid',
+                                                   'format': pymdownx.superfences.fence_div_format
+                                               }
                                            ]
                                        },
                                        'pymdownx.tasklist': {
@@ -263,7 +266,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
 
             shutil.copyfileobj(f, self.wfile)
 
-    def file_icon(self, ext:str, isfile:bool):
+    def file_icon(self, ext: str, isfile: bool):
         ext = ext.lower()
         if not isfile:
             ext = 'folder_type_{}'.format(ext)
@@ -276,8 +279,6 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         if isfile:
             li_icon = 'default_file.svg'
         return li_icon
-        
-        
 
     def guess_type(self, path):
         base, ext = posixpath.splitext(path)
@@ -339,6 +340,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         'folder_type_win': 'folder_type_windows.svg',
     })
 
+
 class MarkdownHTTPServer(HTTPServer):
     handler_class = MarkdownHTTPRequestHandler
 
@@ -366,6 +368,3 @@ def run(host='', port=8080, directory=os.getcwd(), indexs=''):
     httpd = MarkdownHTTPServer(server_address, directory, indexs)
     print("Serving from http://{}:{}/".format(host, port))
     httpd.serve_forever()
-
-
-
