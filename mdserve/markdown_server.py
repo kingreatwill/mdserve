@@ -254,6 +254,9 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         rel_path = filename
         if local_file:
             rel_path = os.path.join(os.path.dirname(__file__), filename)
+        if not os.path.exists(rel_path):
+            self.send_response(404)
+            return
         content_type = self.guess_type(filename)
         with open(rel_path, 'rb') as f:
             self.send_response(200)
@@ -316,6 +319,15 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         'file_type_sum': 'file_type_go_package.svg',
 
         'file_type_dockerfile': 'file_type_docker2.svg',
+
+        'file_type_jpeg': 'file_type_image.svg',
+        'file_type_jpg': 'file_type_image.svg',
+        'file_type_gif': 'file_type_image.svg',
+        'file_type_png': 'file_type_image.svg',
+        'file_type_bmp': 'file_type_image.svg',
+        'file_type_tiff': 'file_type_image.svg',
+        'file_type_ico': 'file_type_image.svg',
+        
         'folder_type_lang': 'folder_type_locale.svg',
         'folder_type_language': 'folder_type_locale.svg',
         'folder_type_languages': 'folder_type_locale.svg',
