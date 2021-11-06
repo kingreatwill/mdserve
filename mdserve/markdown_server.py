@@ -210,7 +210,6 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         return [
             '<link rel="stylesheet" href="/css/markdown.css"></link>',
             '<link rel="stylesheet" href="/css/style.css"></link>',
-            '<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>',
             '<script src="https://unpkg.com/mermaid@8.13.3/dist/mermaid.min.js"></script>',
             '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css" integrity="sha384-R4558gYOUz8mP9YWpZJjofhk+zx0AS11p36HnD2ZKj/6JR5z27gSSULCNHIRReVs" crossorigin="anonymous">',
             '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js" integrity="sha384-z1fJDqw8ZApjGO3/unPWUPsIymfsJmyrDVWC8Tv/a1HeOtGmkwNd/7xUS0Xcnvsx" crossorigin="anonymous"></script>',
