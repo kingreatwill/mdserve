@@ -86,7 +86,8 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                 if not file_extension:
                     file_extension = entry
             else:
-                a_href = a_href + '/' # 解决默认 README.md中的图片路径问题（如：[](img/xx.png)）
+                # 解决默认 README.md中的图片路径问题（如：[](img/xx.png)）
+                a_href = a_href + '/'
 
             li_icon = self.file_icon(file_extension, entry_isfile)
             li_objs.append({'isfile': entry_isfile, 'href': a_href,
@@ -144,22 +145,22 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             return self.make_html(
                 [markdown.markdown(f.read(),
                                    extensions=['toc', 'meta',
-                                               'pymdownx.betterem',  # pip install pymdown-extensions
-                                               'pymdownx.superfences',
+                                               'pymdownx.extra',
+                                               #    'pymdownx.betterem',  # pip install pymdown-extensions
+                                               #    'pymdownx.superfences',
                                                'pymdownx.arithmatex',
                                                'pymdownx.inlinehilite',
-                                               'pymdownx.superfences',
                                                'pymdownx.tabbed',
                                                'pymdownx.tasklist',
                                                'pymdownx.highlight',
                                                'pymdownx.emoji',
                                                'pymdownx.magiclink',
-                                               'markdown.extensions.footnotes',
-                                               'markdown.extensions.attr_list',
-                                               'markdown.extensions.def_list',
-                                               'markdown.extensions.tables',
-                                               'markdown.extensions.abbr',
-                                               'markdown.extensions.md_in_html',
+                                               #    'markdown.extensions.footnotes',
+                                               #    'markdown.extensions.attr_list',
+                                               #    'markdown.extensions.def_list',
+                                               #    'markdown.extensions.tables',
+                                               #    'markdown.extensions.abbr',
+                                               #    'markdown.extensions.md_in_html',
                                                ],
                                    extension_configs={
                                        'pymdownx.inlinehilite': {
@@ -171,19 +172,21 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                                                }
                                            ]
                                        },
-                                       "pymdownx.superfences": {
-                                           "custom_fences": [
-                                               {
-                                                   "name": "math",
-                                                   "class": "arithmatex",
-                                                   'format': arithmatex.arithmatex_fenced_format(which="generic")
-                                               },
-                                               {
-                                                   'name': 'mermaid',
-                                                   'class': 'mermaid',
-                                                   'format': pymdownx.superfences.fence_div_format
-                                               }
-                                           ]
+                                       'pymdownx.extra': {
+                                           "pymdownx.superfences": {
+                                               "custom_fences": [
+                                                   {
+                                                       "name": "math",
+                                                       "class": "arithmatex",
+                                                       'format': arithmatex.arithmatex_fenced_format(which="generic")
+                                                   },
+                                                   {
+                                                       'name': 'mermaid',
+                                                       'class': 'mermaid',
+                                                       'format': pymdownx.superfences.fence_div_format
+                                                   }
+                                               ]
+                                           },
                                        },
                                        'pymdownx.tasklist': {
                                            'custom_checkbox': True,
@@ -256,7 +259,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         if local_file:
             rel_path = os.path.join(os.path.dirname(__file__), filename)
         if not os.path.exists(rel_path):
-            self.send_error(404, "File not found") #self.send_response(404)
+            self.send_error(404, "File not found")  # self.send_response(404)
             return
         content_type = self.guess_type(filename)
         with open(rel_path, 'rb') as f:
@@ -328,7 +331,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         'file_type_bmp': 'file_type_image.svg',
         'file_type_tiff': 'file_type_image.svg',
         'file_type_ico': 'file_type_image.svg',
-        
+
         'folder_type_lang': 'folder_type_locale.svg',
         'folder_type_language': 'folder_type_locale.svg',
         'folder_type_languages': 'folder_type_locale.svg',
